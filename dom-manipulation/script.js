@@ -46,10 +46,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const selectedCategory = categoryFilter.value;
         localStorage.setItem(lastCategoryKey, selectedCategory);
         const filteredQuotes = selectedCategory === 'all' ? quotes : quotes.filter(quote => quote.category === selectedCategory);
-        fetchQuotesFromServer(filteredQuotes);
+        displayQuotes(filteredQuotes);
     };
 
-    const fetchQuotesFromServer = (quotesToDisplay) => {
+    const displayQuotes = (quotesToDisplay) => {
         quoteDisplay.innerHTML = '';
         quotesToDisplay.forEach(quote => {
             const quoteText = document.createElement('p');
@@ -124,23 +124,31 @@ document.addEventListener('DOMContentLoaded', () => {
         fileReader.readAsText(event.target.files[0]);
     };
 
-    const syncWithServer = () => {
-        fetch(serverUrl)
+    const fetchQuotesFromServer = () => {
+        return fetch(serverUrl)
             .then(response => response.json())
             .then(serverQuotes => {
-                const serverQuotesFormatted = serverQuotes.map(quote => ({ text: quote.title, category: 'Server' })); // Mock server response formatting
-                const newQuotes = serverQuotesFormatted.filter(serverQuote => 
-                    !quotes.some(localQuote => localQuote.text === serverQuote.text && localQuote.category === serverQuote.category)
-                );
-                
-                if (newQuotes.length > 0) {
-                    quotes.push(...newQuotes);
-                    saveQuotes();
-                    populateCategories();
-                    displayConflictNotification(newQuotes.length);
-                }
+                return serverQuotes.map(quote => ({ text: quote.title, category: 'Server' })); // Mock server response formatting
             })
-            .catch(error => console.error('Error syncing with server:', error));
+            .catch(error => {
+                console.error('Error fetching quotes from server:', error);
+                return [];
+            });
+    };
+
+    const syncWithServer = () => {
+        fetchQuotesFromServer().then(serverQuotesFormatted => {
+            const newQuotes = serverQuotesFormatted.filter(serverQuote => 
+                !quotes.some(localQuote => localQuote.text === serverQuote.text && localQuote.category === serverQuote.category)
+            );
+            
+            if (newQuotes.length > 0) {
+                quotes.push(...newQuotes);
+                saveQuotes();
+                populateCategories();
+                displayConflictNotification(newQuotes.length);
+            }
+        });
     };
 
     const displayConflictNotification = (newQuotesCount) => {
