@@ -11,15 +11,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const newQuoteText = document.getElementById('newQuoteText');
     const newQuoteCategory = document.getElementById('newQuoteCategory');
 
+    // Function to display a random quote
     const showRandomQuote = () => {
         const randomIndex = Math.floor(Math.random() * quotes.length);
         const quote = quotes[randomIndex];
         quoteDisplay.innerHTML = `<p>${quote.text}</p><small>${quote.category}</small>`;
     };
 
+    // Function to add a new quote to the quotes array and update the DOM
     const addQuote = () => {
-        const text = newQuoteText.value;
-        const category = newQuoteCategory.value;
+        const text = newQuoteText.value.trim();
+        const category = newQuoteCategory.value.trim();
         if (text && category) {
             quotes.push({ text, category });
             newQuoteText.value = '';
@@ -30,6 +32,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // Event listener for the "Show New Quote" button
     newQuoteButton.addEventListener('click', showRandomQuote);
+
+    // Event listener for the "Add Quote" button
     addQuoteButton.addEventListener('click', addQuote);
 });
