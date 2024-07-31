@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Function to add a new quote to the quotes array and update the DOM
-    const addQuote = () => {
+    const createAddQuoteForm = () => {
         const text = newQuoteText.value.trim();
         const category = newQuoteCategory.value.trim();
         if (text && category) {
@@ -36,5 +36,5 @@ document.addEventListener('DOMContentLoaded', () => {
     newQuoteButton.addEventListener('click', showRandomQuote);
 
     // Event listener for the "Add Quote" button
-    addQuoteButton.addEventListener('click', addQuote);
+    addQuoteButton.addEventListener('click', createAddQuoteForm);
 });
