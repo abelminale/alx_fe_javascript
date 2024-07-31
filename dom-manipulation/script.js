@@ -100,7 +100,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveQuotes = () => {
         localStorage.setItem(quotesKey, JSON.stringify(quotes));
     };
-
+    const fetchQuotesFromServer = () => {
+        return fetch(serverUrl)
+            .then(response => response.json())
+            .then(serverQuotes => {
+                return serverQuotes.map(quote => ({ text: quote.title, category: 'Server' })); // Mock server response formatting
+            })
+            .catch(error => {
+                console.error('Error fetching quotes from server:', error);
+                return [];
+            });
+    };
     const exportToJsonFile = () => {
         const blob = new Blob([JSON.stringify(quotes, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
@@ -124,17 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
         fileReader.readAsText(event.target.files[0]);
     };
 
-    const fetchQuotesFromServer = () => {
-        return fetch(serverUrl)
-            .then(response => response.json())
-            .then(serverQuotes => {
-                return serverQuotes.map(quote => ({ text: quote.title, category: 'Server' })); // Mock server response formatting
-            })
-            .catch(error => {
-                console.error('Error fetching quotes from server:', error);
-                return [];
-            });
-    };
+ 
 
     const syncWithServer = () => {
         fetchQuotesFromServer().then(serverQuotesFormatted => {
