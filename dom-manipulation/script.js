@@ -46,10 +46,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const selectedCategory = categoryFilter.value;
         localStorage.setItem(lastCategoryKey, selectedCategory);
         const filteredQuotes = selectedCategory === 'all' ? quotes : quotes.filter(quote => quote.category === selectedCategory);
-        displayQuotes(filteredQuotes);
+        fetchQuotesFromServer(filteredQuotes);
     };
 
-    const displayQuotes = (quotesToDisplay) => {
+    const fetchQuotesFromServer = (quotesToDisplay) => {
         quoteDisplay.innerHTML = '';
         quotesToDisplay.forEach(quote => {
             const quoteText = document.createElement('p');
