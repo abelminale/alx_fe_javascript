@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const quotesKey = 'quotes';
     const lastQuoteKey = 'lastQuote';
     const lastCategoryKey = 'lastCategory';
+    const serverUrl = 'https://jsonplaceholder.typicode.com/posts'; // Mock API URL for fetching quotes
     let quotes = JSON.parse(localStorage.getItem(quotesKey)) || [
         { text: "The only limit to our realization of tomorrow is our doubts of today.", category: "Motivation" },
         { text: "In the end, we will remember not the words of our enemies, but the silence of our friends.", category: "Reflection" },
@@ -10,12 +11,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const quoteDisplay = document.getElementById('quoteDisplay');
     const newQuoteButton = document.getElementById('newQuote');
-    const addQuoteButton = document.getElementById('addQuote');
+    const addQuoteButton = document.getElementById('createAddQuoteForm');
     const newQuoteText = document.getElementById('newQuoteText');
     const newQuoteCategory = document.getElementById('newQuoteCategory');
     const importFileInput = document.getElementById('importFile');
     const exportButton = document.getElementById('exportQuotes');
     const categoryFilter = document.getElementById('categoryFilter');
+    const conflictNotification = document.createElement('div');
+    conflictNotification.id = 'conflictNotification';
+    document.body.insertBefore(conflictNotification, document.body.firstChild);
 
     const getCategories = () => {
         const categories = new Set(quotes.map(quote => quote.category));
@@ -86,6 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
             newQuoteCategory.value = '';
             saveQuotes();
             populateCategories();
+            syncWithServer();
             alert('Quote added successfully!');
         } else {
             alert('Please enter both a quote and a category.');
@@ -119,16 +124,43 @@ document.addEventListener('DOMContentLoaded', () => {
         fileReader.readAsText(event.target.files[0]);
     };
 
+    const syncWithServer = () => {
+        fetch(serverUrl)
+            .then(response => response.json())
+            .then(serverQuotes => {
+                const serverQuotesFormatted = serverQuotes.map(quote => ({ text: quote.title, category: 'Server' })); // Mock server response formatting
+                const newQuotes = serverQuotesFormatted.filter(serverQuote => 
+                    !quotes.some(localQuote => localQuote.text === serverQuote.text && localQuote.category === serverQuote.category)
+                );
+                
+                if (newQuotes.length > 0) {
+                    quotes.push(...newQuotes);
+                    saveQuotes();
+                    populateCategories();
+                    displayConflictNotification(newQuotes.length);
+                }
+            })
+            .catch(error => console.error('Error syncing with server:', error));
+    };
+
+    const displayConflictNotification = (newQuotesCount) => {
+        conflictNotification.textContent = `Conflict resolved. ${newQuotesCount} new quotes were added from the server.`;
+        setTimeout(() => {
+            conflictNotification.textContent = '';
+        }, 5000);
+    };
+
     const lastQuote = JSON.parse(sessionStorage.getItem(lastQuoteKey));
     if (lastQuote) {
         quoteDisplay.innerHTML = `<p>${lastQuote.text}</p><small>${lastQuote.category}</small>`;
     }
 
     newQuoteButton.addEventListener('click', showRandomQuote);
-    addQuoteButton.addEventListener('click', createAddQuoteForm);
+    addQuoteButton.addEventListener('click', addQuote);
     exportButton.addEventListener('click', exportToJsonFile);
     importFileInput.addEventListener('change', importFromJsonFile);
 
     populateCategories();
     filterQuotes();
+    setInterval(syncWithServer, 10000); // Sync with server every 10 seconds
 });
