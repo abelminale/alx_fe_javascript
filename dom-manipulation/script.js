@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const quoteDisplay = document.getElementById('quoteDisplay');
     const newQuoteButton = document.getElementById('newQuote');
-    const addQuoteButton = document.getElementById('createAddQuoteForm');
+    const addQuoteButton = document.getElementById('addQuote');
     const newQuoteText = document.getElementById('newQuoteText');
     const newQuoteCategory = document.getElementById('newQuoteCategory');
     const importFileInput = document.getElementById('importFile');
@@ -81,7 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
         sessionStorage.setItem(lastQuoteKey, JSON.stringify(quote));
     };
 
-    const createAddQuoteForm = () => {
+    const addQuote = () => {
         const text = newQuoteText.value.trim();
         const category = newQuoteCategory.value.trim();
         if (text && category) {
@@ -125,16 +125,15 @@ document.addEventListener('DOMContentLoaded', () => {
         fileReader.readAsText(event.target.files[0]);
     };
 
-    const fetchQuotesFromServer = () => {
-        return fetch(serverUrl)
-            .then(response => response.json())
-            .then(serverQuotes => {
-                return serverQuotes.map(quote => ({ text: quote.title, category: 'Server' })); // Mock server response formatting
-            })
-            .catch(error => {
-                console.error('Error fetching quotes from server:', error);
-                return [];
-            });
+    const fetchQuotesFromServer = async () => {
+        try {
+            const response = await fetch(serverUrl);
+            const serverQuotes = await response.json();
+            return serverQuotes.map(quote => ({ text: quote.title, category: 'Server' })); // Mock server response formatting
+        } catch (error) {
+            console.error('Error fetching quotes from server:', error);
+            return [];
+        }
     };
 
     const postQuoteToServer = (quote) => {
@@ -154,19 +153,18 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    const syncQuotes = () => {
-        fetchQuotesFromServer().then(serverQuotesFormatted => {
-            const newQuotes = serverQuotesFormatted.filter(serverQuote => 
-                !quotes.some(localQuote => localQuote.text === serverQuote.text && localQuote.category === serverQuote.category)
-            );
-            
-            if (newQuotes.length > 0) {
-                quotes.push(...newQuotes);
-                saveQuotes();
-                populateCategories();
-                displayConflictNotification(newQuotes.length);
-            }
-        });
+    const syncQuotes = async () => {
+        const serverQuotesFormatted = await fetchQuotesFromServer();
+        const newQuotes = serverQuotesFormatted.filter(serverQuote => 
+            !quotes.some(localQuote => localQuote.text === serverQuote.text && localQuote.category === serverQuote.category)
+        );
+        
+        if (newQuotes.length > 0) {
+            quotes.push(...newQuotes);
+            saveQuotes();
+            populateCategories();
+            displayConflictNotification(newQuotes.length);
+        }
     };
 
     const displayConflictNotification = (newQuotesCount) => {
