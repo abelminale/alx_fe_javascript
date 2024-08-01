@@ -147,7 +147,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     };
 
-    // Post a new quote to the server
     const postQuoteToServer = (quote) => {
         fetch(serverUrl, {
             method: 'POST',
