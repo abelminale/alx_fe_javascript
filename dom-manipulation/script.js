@@ -120,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
             quotes.push(...importedQuotes);
             saveQuotes();
             populateCategories();
-            alert('Quotes imported successfully!');
+            displayNotification('Quotes imported successfully!');
         };
         fileReader.readAsText(event.target.files[0]);
     }
@@ -164,10 +164,18 @@ document.addEventListener('DOMContentLoaded', () => {
             populateCategories();
             displayConflictNotification(newQuotes.length);
         }
+        displayNotification('Quotes synced with server!');
     }
 
     function displayConflictNotification(newQuotesCount) {
         conflictNotification.textContent = `Conflict resolved. ${newQuotesCount} new quotes were added from the server.`;
+        setTimeout(() => {
+            conflictNotification.textContent = '';
+        }, 5000);
+    }
+
+    function displayNotification(message) {
+        conflictNotification.textContent = message;
         setTimeout(() => {
             conflictNotification.textContent = '';
         }, 5000);
