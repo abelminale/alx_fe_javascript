@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const quotesKey = 'quotes';
     const lastQuoteKey = 'lastQuote';
     const lastCategoryKey = 'lastCategory';
-    const serverUrl = 'https://jsonplaceholder.typicode.com/posts'; // Mock API URL for fetching quotes
+    const serverUrl = 'https://jsonplaceholder.typicode.com/posts'; // Mock API URL for fetching and posting quotes
     let quotes = JSON.parse(localStorage.getItem(quotesKey)) || [
         { text: "The only limit to our realization of tomorrow is our doubts of today.", category: "Motivation" },
         { text: "In the end, we will remember not the words of our enemies, but the silence of our friends.", category: "Reflection" },
@@ -85,12 +85,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const text = newQuoteText.value.trim();
         const category = newQuoteCategory.value.trim();
         if (text && category) {
-            quotes.push({ text, category });
+            const newQuote = { text, category };
+            quotes.push(newQuote);
             newQuoteText.value = '';
             newQuoteCategory.value = '';
             saveQuotes();
             populateCategories();
-            syncWithServer();
+            postQuoteToServer(newQuote);
             alert('Quote added successfully!');
         } else {
             alert('Please enter both a quote and a category.');
@@ -100,17 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveQuotes = () => {
         localStorage.setItem(quotesKey, JSON.stringify(quotes));
     };
-    const fetchQuotesFromServer = () => {
-        return fetch(serverUrl)
-            .then(response => response.json())
-            .then(serverQuotes => {
-                return serverQuotes.map(quote => ({ text: quote.title, category: 'Server' })); // Mock server response formatting
-            })
-            .catch(error => {
-                console.error('Error fetching quotes from server:', error);
-                return [];
-            });
-    };
+
     const exportToJsonFile = () => {
         const blob = new Blob([JSON.stringify(quotes, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
@@ -134,9 +125,36 @@ document.addEventListener('DOMContentLoaded', () => {
         fileReader.readAsText(event.target.files[0]);
     };
 
- 
+    const fetchQuotesFromServer = () => {
+        return fetch(serverUrl)
+            .then(response => response.json())
+            .then(serverQuotes => {
+                return serverQuotes.map(quote => ({ text: quote.title, category: 'Server' })); // Mock server response formatting
+            })
+            .catch(error => {
+                console.error('Error fetching quotes from server:', error);
+                return [];
+            });
+    };
 
-    const syncWithServer = () => {
+    const postQuoteToServer = (quote) => {
+        fetch(serverUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ title: quote.text })
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Quote posted to server:', data);
+        })
+        .catch(error => {
+            console.error('Error posting quote to server:', error);
+        });
+    };
+
+    const syncQuotes = () => {
         fetchQuotesFromServer().then(serverQuotesFormatted => {
             const newQuotes = serverQuotesFormatted.filter(serverQuote => 
                 !quotes.some(localQuote => localQuote.text === serverQuote.text && localQuote.category === serverQuote.category)
@@ -170,5 +188,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
     populateCategories();
     filterQuotes();
-    setInterval(syncWithServer, 10000); // Sync with server every 10 seconds
+    setInterval(syncQuotes, 10000); // Sync with server every 10 seconds
 });
