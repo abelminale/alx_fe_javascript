@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const quoteDisplay = document.getElementById('quoteDisplay');
     const newQuoteButton = document.getElementById('newQuote');
-    const addQuoteButton = document.getElementById('addQuote');
+    const addQuoteButton = document.getElementById('createAddQuoteForm');
     const newQuoteText = document.getElementById('newQuoteText');
     const newQuoteCategory = document.getElementById('newQuoteCategory');
     const importFileInput = document.getElementById('importFile');
@@ -21,11 +21,13 @@ document.addEventListener('DOMContentLoaded', () => {
     conflictNotification.id = 'conflictNotification';
     document.body.insertBefore(conflictNotification, document.body.firstChild);
 
+    // Get unique categories from the quotes array
     const getCategories = () => {
         const categories = new Set(quotes.map(quote => quote.category));
         return Array.from(categories);
     };
 
+    // Populate the category dropdown
     const populateCategories = () => {
         const categories = getCategories();
         categoryFilter.innerHTML = '<option value="all">All Categories</option>';
@@ -42,6 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // Filter and display quotes based on the selected category
     const filterQuotes = () => {
         const selectedCategory = categoryFilter.value;
         localStorage.setItem(lastCategoryKey, selectedCategory);
@@ -49,6 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
         displayQuotes(filteredQuotes);
     };
 
+    // Display quotes in the quote display area
     const displayQuotes = (quotesToDisplay) => {
         quoteDisplay.innerHTML = '';
         quotesToDisplay.forEach(quote => {
@@ -63,6 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
+    // Show a random quote from the selected category
     const showRandomQuote = () => {
         const filteredQuotes = categoryFilter.value === 'all' ? quotes : quotes.filter(quote => quote.category === categoryFilter.value);
         const randomIndex = Math.floor(Math.random() * filteredQuotes.length);
@@ -81,6 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
         sessionStorage.setItem(lastQuoteKey, JSON.stringify(quote));
     };
 
+    // Add a new quote to the quotes array and update storage
     const addQuote = () => {
         const text = newQuoteText.value.trim();
         const category = newQuoteCategory.value.trim();
@@ -98,10 +104,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // Save quotes to local storage
     const saveQuotes = () => {
         localStorage.setItem(quotesKey, JSON.stringify(quotes));
     };
 
+    // Export quotes to a JSON file
     const exportToJsonFile = () => {
         const blob = new Blob([JSON.stringify(quotes, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
@@ -113,6 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.removeChild(a);
     };
 
+    // Import quotes from a JSON file
     const importFromJsonFile = (event) => {
         const fileReader = new FileReader();
         fileReader.onload = (event) => {
@@ -125,17 +134,20 @@ document.addEventListener('DOMContentLoaded', () => {
         fileReader.readAsText(event.target.files[0]);
     };
 
-    const fetchQuotesFromServer = async () => {
-        try {
-            const response = await fetch(serverUrl);
-            const serverQuotes = await response.json();
-            return serverQuotes.map(quote => ({ text: quote.title, category: 'Server' })); // Mock server response formatting
-        } catch (error) {
-            console.error('Error fetching quotes from server:', error);
-            return [];
-        }
+    // Fetch quotes from the server
+    const fetchQuotesFromServer = () => {
+        return fetch(serverUrl)
+            .then(response => response.json())
+            .then(serverQuotes => {
+                return serverQuotes.map(quote => ({ text: quote.title, category: 'Server' })); // Mock server response formatting
+            })
+            .catch(error => {
+                console.error('Error fetching quotes from server:', error);
+                return [];
+            });
     };
 
+    // Post a new quote to the server
     const postQuoteToServer = (quote) => {
         fetch(serverUrl, {
             method: 'POST',
@@ -153,20 +165,23 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    const syncQuotes = async () => {
-        const serverQuotesFormatted = await fetchQuotesFromServer();
-        const newQuotes = serverQuotesFormatted.filter(serverQuote => 
-            !quotes.some(localQuote => localQuote.text === serverQuote.text && localQuote.category === serverQuote.category)
-        );
-        
-        if (newQuotes.length > 0) {
-            quotes.push(...newQuotes);
-            saveQuotes();
-            populateCategories();
-            displayConflictNotification(newQuotes.length);
-        }
+    // Sync quotes with the server and resolve conflicts
+    const syncQuotes = () => {
+        fetchQuotesFromServer().then(serverQuotesFormatted => {
+            const newQuotes = serverQuotesFormatted.filter(serverQuote => 
+                !quotes.some(localQuote => localQuote.text === serverQuote.text && localQuote.category === serverQuote.category)
+            );
+            
+            if (newQuotes.length > 0) {
+                quotes.push(...newQuotes);
+                saveQuotes();
+                populateCategories();
+                displayConflictNotification(newQuotes.length);
+            }
+        });
     };
 
+    // Display conflict notification to the user
     const displayConflictNotification = (newQuotesCount) => {
         conflictNotification.textContent = `Conflict resolved. ${newQuotesCount} new quotes were added from the server.`;
         setTimeout(() => {
@@ -174,6 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 5000);
     };
 
+    // Display the last quote viewed by the user
     const lastQuote = JSON.parse(sessionStorage.getItem(lastQuoteKey));
     if (lastQuote) {
         quoteDisplay.innerHTML = `<p>${lastQuote.text}</p><small>${lastQuote.category}</small>`;
@@ -183,6 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
     addQuoteButton.addEventListener('click', addQuote);
     exportButton.addEventListener('click', exportToJsonFile);
     importFileInput.addEventListener('change', importFromJsonFile);
+    categoryFilter.addEventListener('change', filterQuotes); // Listen for changes to the category filter
 
     populateCategories();
     filterQuotes();
